@@ -3,6 +3,7 @@ using System;
 using FrutasDoSeuZe.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FrutasDoSeuZe.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251027180829_AddPedidosEItens")]
+    partial class AddPedidosEItens
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -87,9 +90,6 @@ namespace FrutasDoSeuZe.Migrations
                     b.Property<string>("Tipo")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<decimal>("ValorTotal")
-                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 

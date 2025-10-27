@@ -1,7 +1,8 @@
 ﻿using FrutasDoSeuZe.Data;
 using FrutasDoSeuZe.Models;
 using System.Text;
-//implementar uma forma de utf para os emojis aparecerem
+
+Console.OutputEncoding = System.Text.Encoding.UTF8; // utf para emojis no console
 
 using var db = new AppDbContext();
 
@@ -38,36 +39,24 @@ while (isRuning)
             Console.Write("Nome da fruta: ");
             string? nome = Console.ReadLine()!.Trim();
 
-            while (Fruta.VerificaNome(nome))
+            while (Fruta.IsNomeValido(nome))
             {
                 Console.Write("\nNome inválido, certifique de não conter números");
                 nome = Console.ReadLine()!.Trim();
             }
 
+            decimal preco;
             Console.Write("Preço: "); Console.Write(nome + " ");
-
-            if (!decimal.TryParse(Console.ReadLine()!, out decimal preco))
+            while (!decimal.TryParse(Console.ReadLine(), out preco) || !Fruta.IsPrecoValido(preco))
             {
-                Console.WriteLine("⚠️ Valor inválido!\n");
+                Console.Write("\nPreço inválido! ... ");
             }
 
-            while (Fruta.VerificaPreco(preco))
-            {
-                Console.Write("\nPreço inválido! Digite um valor até R$ 1000,00 ");
-                preco = decimal.Parse(Console.ReadLine()!);
-            }
-
+            int quantidade;
             Console.Write("Quantidade: ");
-
-            if (!int.TryParse(Console.ReadLine(), out int quantidade))
+            while (!int.TryParse(Console.ReadLine(), out quantidade) || !Fruta.IsQuantidadeValida(quantidade))
             {
                 Console.WriteLine("⚠️ Quantidade inválida:");
-            }
-
-            while (Fruta.VerificaQuantidade(quantidade))
-            {
-                Console.Write("\nQuantidade inválida! Digite um valor entre 1 e 10.000 ");
-                quantidade = int.Parse(Console.ReadLine()!);
             }
 
             var novaFruta = new Fruta { Nome = nome, Preco = preco, Quantidade = quantidade };
@@ -81,7 +70,7 @@ while (isRuning)
             Console.Clear();
             var frutas = db.Frutas.ToList();
 
-            if (frutas.Count == 0)
+            if (frutas.Count is 0)
             {
                 Console.WriteLine("📭 Nenhuma fruta cadastrada.");
             }
@@ -101,7 +90,7 @@ while (isRuning)
             string? nomeAtualizar = Console.ReadLine()!.Trim();
             var frutaAtualizar = db.Frutas.FirstOrDefault(f => f.Nome == nomeAtualizar);
 
-            if (frutaAtualizar != null)
+            if (frutaAtualizar is null)
             {
                 Console.Write("Novo preço: ");
                 frutaAtualizar.Preco = decimal.Parse(Console.ReadLine()!);
@@ -122,7 +111,7 @@ while (isRuning)
             string? nomeRemover = Console.ReadLine()!.Trim();
             var frutaRemover = db.Frutas.FirstOrDefault(f => f.Nome == nomeRemover);
 
-            if (frutaRemover != null)
+            if (frutaRemover is null)
             {
                 db.Frutas.Remove(frutaRemover);
                 await db.SaveChangesAsync();
@@ -156,7 +145,6 @@ while (isRuning)
                     Tipo = tipo,
                     Descricao = descricao
                 };
-
                 db.Pedidos.Add(pedido);
                 await db.SaveChangesAsync();
 
@@ -168,7 +156,7 @@ while (isRuning)
                     string? nomeFruta = Console.ReadLine()!.Trim();
                     var fruta = db.Frutas.FirstOrDefault(f => f.Nome == nomeFruta);
 
-                    if (fruta == null)
+                    if (fruta is null)
                     {
                         Console.WriteLine("\n⚠️ Fruta não encontrada!");
                         continue;
@@ -177,16 +165,15 @@ while (isRuning)
                     Console.Write("\nQuantidade: ");
                     int quantidadeItem = int.Parse(Console.ReadLine()!);
 
-                    while (Fruta.VerificaQuantidade(quantidadeItem) ||
-                           (tipo.ToLower() == "venda" && quantidadeItem > fruta.Quantidade))
+                    while (!Fruta.IsQuantidadeValida(quantidadeItem) || (tipo == "venda" && quantidadeItem > fruta.Quantidade))
                     {
-                        if (Fruta.VerificaQuantidade(quantidadeItem))
+                        if (!Fruta.IsQuantidadeValida(quantidadeItem))
                             Console.Write("\nQuantidade inválida! Digite um valor entre 1 e 10.000: ");
 
-                        else
-                            Console.Write($"\n⚠️ Estoque insuficiente! Temos apenas {fruta.Quantidade}kg de {fruta.Nome}. Digite uma quantidade válida: ");
-                        quantidadeItem = int.Parse(Console.ReadLine()!);
+                        else if (quantidadeItem > fruta.Quantidade)
+                            Console.Write($"\n⚠️ Estoque insuficiente! Temos apenas {fruta.Quantidade}kg. Digite uma quantidade válida: ");
 
+                        quantidadeItem = int.Parse(Console.ReadLine()!);
                     }
 
                     var item = new ItemPedido()
@@ -206,7 +193,6 @@ while (isRuning)
                     else if (tipo.ToLower() == "reposição")
                         fruta.Quantidade += quantidadeItem;
 
-                    pedido .ValorTotal = CalcularTotal(pedido, db);
 
                     await db.SaveChangesAsync();
 
@@ -214,7 +200,11 @@ while (isRuning)
                     adicionarMais = Console.ReadLine()!.ToLower() == "s";
                 }
 
-                Console.WriteLine($"✅ Pedido {pedido.Id} registrado com sucesso!");
+                pedido.ValorTotal = CalcularTotal(pedido, db);
+                await db.SaveChangesAsync();
+
+
+                Console.WriteLine($"\n✅ Pedido {pedido.Id} registrado com sucesso!");
             }
             catch (Exception ex)
             {

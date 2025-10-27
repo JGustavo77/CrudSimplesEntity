@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FrutasDoSeuZe.Models;
+using Microsoft.Extensions.Configuration;
+
 
 namespace FrutasDoSeuZe.Data
 {
@@ -13,7 +15,7 @@ namespace FrutasDoSeuZe.Data
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=FrutasDoSeuZe;Username=postgres;Password=123");
+                optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=frutas_db;Username=postgres;Password=JanGustavo083#");
             }
         }
 

@@ -12,27 +12,17 @@ public class Fruta
     public int Quantidade { get; set; }
 
 
-public static bool VerificaPreco(decimal preco)
+    public static bool IsPrecoValido(decimal preco) => preco >= 0 && preco <= 1000;
+    
+
+public static bool IsQuantidadeValida(int quantidade)
     {
-        if (preco >= 0 && preco <= 1000)
-        {
-            return false;
-        }
-        return true;
+        return quantidade > 0 && quantidade < 1000;
     }
 
-public static bool VerificaQuantidade(int quantidade)
+public static bool IsNomeValido(string nome)
     {
-        if (quantidade < 0 || quantidade > 1000)
-        {
-            return true;
-        }
-        return false;
-    }
-
-public static bool VerificaNome(string nome)
-    {
-        Regex regex = new(@"^[A-Za-zÀ-ú\s]+$"); //adicionar verificaçao de uma vogal pelo menos
+        Regex regex = new(@"^[A-Za-zÀ-ú\s]+$"); 
         if (string.IsNullOrWhiteSpace(nome))
         {
             return true;

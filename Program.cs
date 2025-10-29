@@ -46,14 +46,14 @@ while (isRuning)
             }
 
             decimal preco;
-            Console.Write("Preço: "); Console.Write(nome + " ");
+            Console.Write("\nPreço da(do) "); Console.Write(nome + ": ");
             while (!decimal.TryParse(Console.ReadLine(), out preco) || !Fruta.IsPrecoValido(preco))
             {
                 Console.Write("\nPreço inválido! ... ");
             }
 
             int quantidade;
-            Console.Write("Quantidade: ");
+            Console.Write("\nQuantidade: ");
             while (!int.TryParse(Console.ReadLine(), out quantidade) || !Fruta.IsQuantidadeValida(quantidade))
             {
                 Console.WriteLine("⚠️ Quantidade inválida:");
@@ -150,6 +150,7 @@ while (isRuning)
 
                 bool adicionarMais = true;
 
+                decimal total = 0;
                 while (adicionarMais)
                 {
                     Console.Write("\nNome da fruta: ");
@@ -168,7 +169,7 @@ while (isRuning)
                     while (!Fruta.IsQuantidadeValida(quantidadeItem) || (tipo == "venda" && quantidadeItem > fruta.Quantidade))
                     {
                         if (!Fruta.IsQuantidadeValida(quantidadeItem))
-                            Console.Write("\nQuantidade inválida! Digite um valor entre 1 e 10.000: ");
+                            Console.Write("\nQuantidade inválida! Digite um valor entre 1 e 1.000: ");
 
                         else if (quantidadeItem > fruta.Quantidade)
                             Console.Write($"\n⚠️ Estoque insuficiente! Temos apenas {fruta.Quantidade}kg. Digite uma quantidade válida: ");
@@ -193,14 +194,17 @@ while (isRuning)
                     else if (tipo.ToLower() == "reposição")
                         fruta.Quantidade += quantidadeItem;
 
+                    total += quantidadeItem * fruta.Preco;
 
                     await db.SaveChangesAsync();
 
-                    Console.Write("Adicionar outra fruta ao mesmo pedido? (s/n): ");
+                    Console.Write("\nAdicionar outra fruta ao mesmo pedido? (s/n): ");
                     adicionarMais = Console.ReadLine()!.ToLower() == "s";
                 }
 
-                pedido.ValorTotal = CalcularTotal(pedido, db);
+                //pedido.ValorTotal = CalcularTotal(pedido, db);
+
+                pedido.ValorTotal = total;
                 await db.SaveChangesAsync();
 
 
@@ -257,7 +261,7 @@ static void ExibirErroPedido(Exception ex)
         Console.WriteLine($"👉 Inner: {ex.InnerException.Message}");
 }
 
-static decimal CalcularTotal(Pedido pedido, AppDbContext db)
+/*static decimal CalcularTotal(Pedido pedido, AppDbContext db) não performa bem
 {
     return db.ItensPedido
         .Where(i => i.PedidoId == pedido.Id)
@@ -266,7 +270,6 @@ static decimal CalcularTotal(Pedido pedido, AppDbContext db)
               fruta => fruta.Id,
               (item, fruta) => item.Quantidade * fruta.Preco)
         .Sum();
-}
-
+}*/
 
 

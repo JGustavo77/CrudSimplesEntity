@@ -14,12 +14,7 @@ public class AppDbContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=frutas_db;Username=postgres;Password=123");
-
-            if (!optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=frutas_db;Username=postgres;Password=123");
-            }
+            optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=frutas_db;Username=postgres;Password=JanGustavo083#");
         }
     }
 }

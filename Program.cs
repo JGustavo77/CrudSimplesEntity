@@ -1,6 +1,9 @@
 ﻿using FrutasDoSeuZe.Data;
 using FrutasDoSeuZe.Models;
+using FrutasDoSeuZe.Repositories;
+using Microsoft.Extensions.DependencyInjection;
 using System.Text;
+
 
 Console.OutputEncoding = System.Text.Encoding.UTF8; // utf para emojis no console
 
@@ -8,10 +11,19 @@ using var db = new AppDbContext();
 
 bool isRuning = true;
 
+var services = new ServiceCollection()
+    .AddDbContext<AppDbContext>()
+    .AddScoped<IFrutaRepository, FrutaRepository>()
+    .AddScoped<FrutaService>()
+    .BuildServiceProvider();
+
+var frutaService = services.GetRequiredService<FrutaService>();
+
+
 while (isRuning)
 {
     var menu = new StringBuilder();
-    menu.AppendLine("\n--  Frutas do Seu Zé 🍉 --");
+    menu.AppendLine("\n-- 🍉 Frutas do Seu Zé 🍉 --");
     menu.AppendLine("1. Cadastrar fruta");
     menu.AppendLine("2. Listar frutas");
     menu.AppendLine("3. Atualizar fruta");
@@ -28,97 +40,80 @@ while (isRuning)
     {
         Console.Clear();
         Console.WriteLine("Digite apenas uma opção válida\n");
-        Console.WriteLine(menu);
+        Console.Write(menu);
         opcao = Console.ReadLine();
     }
 
     switch (opcao)
     {
         case "1":
-            Console.Clear();
-            Console.Write("Nome da fruta: ");
+            Console.Write("\nNome da fruta: ");
             string? nome = Console.ReadLine()!.Trim();
 
-            while (Fruta.IsNomeValido(nome))
-            {
-                Console.Write("\nNome inválido, certifique de não conter números");
-                nome = Console.ReadLine()!.Trim();
-            }
+            Console.Write("Preço: ");
+            decimal preco = decimal.Parse(Console.ReadLine()!);
 
-            decimal preco;
-            Console.Write("\nPreço da(do) "); Console.Write(nome + ": ");
-            while (!decimal.TryParse(Console.ReadLine(), out preco) || !Fruta.IsPrecoValido(preco))
-            {
-                Console.Write("\nPreço inválido! ... ");
-            }
+            Console.Write("Quantidade: ");
+            int quantidade = int.Parse(Console.ReadLine()!);
 
-            int quantidade;
-            Console.Write("\nQuantidade: ");
-            while (!int.TryParse(Console.ReadLine(), out quantidade) || !Fruta.IsQuantidadeValida(quantidade))
-            {
-                Console.WriteLine("⚠️ Quantidade inválida:");
-            }
-
-            var novaFruta = new Fruta { Nome = nome, Preco = preco, Quantidade = quantidade };
-            db.Frutas.Add(novaFruta);
-            await db.SaveChangesAsync();
-
-            Console.WriteLine($"✅ {nome} cadastrada com sucesso!");
+            await frutaService.CadastrarAsync(nome, preco, quantidade);
+            Console.WriteLine("\n✅ Fruta cadastrada com sucesso!");
             break;
 
         case "2":
             Console.Clear();
-            var frutas = db.Frutas.ToList();
 
-            if (frutas.Count is 0)
+            var frutas = await frutaService.ListarAsync();
+            Console.WriteLine("-- Lista de Frutas --");
+
+            foreach (var fruta in frutas)
             {
-                Console.WriteLine("📭 Nenhuma fruta cadastrada.");
+                Console.WriteLine($"🍍 {fruta.Nome} | Preço: R${fruta.Preco:F2} | Quantidade: {fruta.Quantidade}kg");
             }
-            else
-            {
-                Console.WriteLine("-- Lista de frutas --");
-                foreach (var fruta in frutas)
-                {
-                    Console.WriteLine($" ID: {fruta.Id} | {fruta.Nome}| R${fruta.Preco} | Estoque: {fruta.Quantidade}kg");
-                }
-            }
+
             break;
 
         case "3":
             Console.Clear();
+
             Console.Write("Nome da fruta a ser atualizada: ");
             string? nomeAtualizar = Console.ReadLine()!.Trim();
-            var frutaAtualizar = db.Frutas.FirstOrDefault(f => f.Nome == nomeAtualizar);
 
-            if (frutaAtualizar is null)
+            Console.Write("Novo preço: ");
+            if (!decimal.TryParse(Console.ReadLine(), out var novoPreco) || novoPreco < 0 && novoPreco < 10000)
             {
-                Console.Write("Novo preço: ");
-                frutaAtualizar.Preco = decimal.Parse(Console.ReadLine()!);
-                Console.Write("Nova quantidade: ");
-                frutaAtualizar.Quantidade = int.Parse(Console.ReadLine()!);
-
-                await db.SaveChangesAsync();
-
-                Console.WriteLine($"Fruta '{frutaAtualizar.Nome}' atualizada!");
+                Console.WriteLine("Preço inválido.");
+                return;
             }
-            else
-                Console.WriteLine("⚠️ Fruta não encontrada!");
+
+            Console.Write("Nova quantidade: ");
+            if (!int.TryParse(Console.ReadLine(), out var novaQuantidade) || novaQuantidade < 0 && novaQuantidade <= 10000)
+            {
+                Console.WriteLine("Quantidade inválida.");
+                return;
+            }
+            await frutaService.AtualizarAsync(nomeAtualizar, novoPreco, novaQuantidade);
+
             break;
 
         case "4":
             Console.Clear();
             Console.Write("Nome da fruta a ser removida: ");
-            string? nomeRemover = Console.ReadLine()!.Trim();
-            var frutaRemover = db.Frutas.FirstOrDefault(f => f.Nome == nomeRemover);
+            string nomeRemover = Console.ReadLine()!.Trim();
 
-            if (frutaRemover is null)
+            try
             {
-                db.Frutas.Remove(frutaRemover);
-                await db.SaveChangesAsync();
-                Console.WriteLine($"❌ Fruta '{frutaRemover.Nome}' removida!");
+                await frutaService.RemoverAsync(nomeRemover);
+                Console.WriteLine($"✅ Fruta '{nomeRemover}' removida com sucesso!");
             }
-            else
-                Console.WriteLine("Essa fruta não existe!/n");
+            catch (FrutaNaoEncontradaException)
+            {
+                Console.WriteLine("⚠️ A fruta informada não existe.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"❌ Não é possível remover: {ex.Message}");
+            }
             break;
 
         case "5":
@@ -202,8 +197,6 @@ while (isRuning)
                     adicionarMais = Console.ReadLine()!.ToLower() == "s";
                 }
 
-                //pedido.ValorTotal = CalcularTotal(pedido, db);
-
                 pedido.ValorTotal = total;
                 await db.SaveChangesAsync();
 
@@ -261,15 +254,5 @@ static void ExibirErroPedido(Exception ex)
         Console.WriteLine($"👉 Inner: {ex.InnerException.Message}");
 }
 
-/*static decimal CalcularTotal(Pedido pedido, AppDbContext db) não performa bem
-{
-    return db.ItensPedido
-        .Where(i => i.PedidoId == pedido.Id)
-        .Join(db.Frutas,
-              item => item.FrutaId,
-              fruta => fruta.Id,
-              (item, fruta) => item.Quantidade * fruta.Preco)
-        .Sum();
-}*/
 
 

@@ -1,4 +1,5 @@
 ﻿using FrutasDoSeuZe.Data;
+using FrutasDoSeuZe.Exceptions;
 using FrutasDoSeuZe.Models;
 using FrutasDoSeuZe.Repositories;
 using Microsoft.Extensions.DependencyInjection;
@@ -110,7 +111,7 @@ while (isRuning)
             {
                 Console.WriteLine("⚠️ A fruta informada não existe.");
             }
-            catch (InvalidOperationException ex)
+            catch (FrutaEmUsoException ex)
             {
                 Console.WriteLine($"❌ Não é possível remover: {ex.Message}");
             }

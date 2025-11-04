@@ -1,4 +1,5 @@
 ﻿using FrutasDoSeuZe.Data;
+using FrutasDoSeuZe.Exceptions;
 using FrutasDoSeuZe.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,7 +34,7 @@ public class FrutaRepository : IFrutaRepository
         if (fruta is null) throw new ArgumentNullException(nameof(fruta));
 
         if (await _db.ItensPedido.AnyAsync(ip => ip.FrutaId == fruta.Id))
-            throw new InvalidOperationException("Não é possível remover a fruta, pois ela está associada a pedidos.");
+            throw new FrutaEmUsoException("Não é possível remover a fruta, pois ela está associada a pedidos.");
 
         // Garante que a entidade seja anexada ao contexto antes da remoção, evitando problemas de rastreamento
         if (_db.Entry(fruta).State == EntityState.Detached)

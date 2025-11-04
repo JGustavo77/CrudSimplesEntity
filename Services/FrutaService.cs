@@ -1,17 +1,7 @@
+using FrutasDoSeuZe.Exceptions;
 ﻿using FrutasDoSeuZe.Models;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
-public class FrutaJaCadastradaException : ApplicationException
-{
-    public FrutaJaCadastradaException(string message) : base(message) { }
-}
-
-public class FrutaNaoEncontradaException : ApplicationException
-{
-    public FrutaNaoEncontradaException(string message) : base(message) { }
-}
 
 public class FrutaService
 {
